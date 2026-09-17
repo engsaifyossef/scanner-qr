@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gate Terminal | High-Speed Access Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <!-- Hardware accelerated html5-qrcode -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #07090E;
+      --surface: #10141E;
+      --surface-elevated: #161C28;
+      --border: #1E2738;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --accent: #2563EB;
+      --emerald: #10B981;
+      --rose: #F43F5E;
+      --amber: #F59E0B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .scanner-app {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Header */
+    .gate-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .terminal-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #60A5FA;
+    }
+
+    .terminal-info h1 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #FFFFFF;
+    }
+
+    .terminal-info p {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .nav-link {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .nav-link:hover {
+      background: var(--surface-elevated);
+      color: #FFFFFF;
+    }
+
+    /* Live Counters */
+    .gate-metrics {
+      display: flex;
+      justify-content: space-around;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 17px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Camera Viewport */
+    .viewport-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+
+    #reader {
+      width: 100%;
+      min-height: 300px;
+      background: #000;
+      border: none !important;
+    }
+
+    #reader video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+
+    /* HUD Corner Brackets Overlay */
+    .hud-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 46px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hud-target {
+      width: 230px;
+      height: 230px;
+      position: relative;
+    }
+
+    .hud-target::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #38BDF8;
+      box-shadow: 0 0 10px #38BDF8;
+      animation: laserSweep 1.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes laserSweep {
+      0% { top: 4%; opacity: 0.3; }
+      100% { top: 96%; opacity: 0.9; }
+    }
+
+    .bracket {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: #38BDF8;
+      border-style: solid;
+    }
+    .bracket-tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
+    .bracket-tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-top-right-radius: 8px; }
+    .bracket-bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-bottom-left-radius: 8px; }
+    .bracket-br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-bottom-right-radius: 8px; }
+
+    /* Controls Bar */
+    .viewport-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      background: #090C12;
+      border-top: 1px solid var(--border);
+    }
+
+    .ctrl-select, .ctrl-btn {
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .ctrl-select {
+      flex: 1;
+    }
+
+    /* Verification Status Banner */
+    .result-sheet {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      animation: popSheet 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes popSheet {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .result-sheet.success {
+      display: block;
+      border-color: rgba(16, 185, 129, 0.4);
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.12), var(--surface));
+    }
+
+    .result-sheet.danger {
+      display: block;
+      border-color: rgba(244, 63, 94, 0.4);
+      background: linear-gradient(180deg, rgba(244, 63, 94, 0.12), var(--surface));
+    }
+
+    .result-sheet.warning {
+      display: block;
+      border-color: rgba(245, 158, 11, 0.4);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.12), var(--surface));
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .success .status-pill { background: #10B981; color: #FFFFFF; }
+    .danger .status-pill { background: #EF4444; color: #FFFFFF; }
+    .warning .status-pill { background: #F59E0B; color: #000000; }
+
+    .attendee-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+    }
+
+    .attendee-sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .result-info-box {
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 14px 0;
+      font-size: 13px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 5px;
+    }
+    .info-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .btn-resume {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .success .btn-resume { background: #10B981; color: #FFFFFF; }
+    .danger .btn-resume { background: #EF4444; color: #FFFFFF; }
+    .warning .btn-resume { background: #F59E0B; color: #000000; }
+
+    /* Manual / Selector Drawer */
+    .manual-entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .manual-entry-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .input-row input, .input-row select {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      color: #FFFFFF;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-row input:focus, .input-row select:focus {
+      border-color: #3B82F6;
+    }
+
+    .input-row button {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: #FFFFFF;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .input-row button:hover {
+      background: #1F293D;
+    }
+  </style>
+</head>
+<body>
+
+<div class="scanner-app">
+  
+  <header class="gate-header">
+    <div class="terminal-badge">
+      <div class="terminal-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="terminal-info">
+        <h1>Gate Terminal 01</h1>
+        <p>Omnidirectional Reader</p>
+      </div>
+    </div>
+    <a href="/admin.html" id="adminLink" class="nav-link">Admin Dashboard</a>
+  </header>
+
+  <div class="gate-metrics">
+    <div><div class="metric-value" id="statTotal">-</div><div class="metric-label">Total Passes</div></div>
+    <div><div class="metric-value" style="color: #34D399;" id="statUsed">-</div><div class="metric-label">Checked In</div></div>
+    <div><div class="metric-value" style="color: #60A5FA;" id="statRemaining">-</div><div class="metric-label">Remaining</div></div>
+  </div>
+
+  <div class="viewport-card">
+    <div id="reader"></div>
+
+    <div class="hud-overlay">
+      <div class="hud-target">
+        <div class="bracket bracket-tl"></div>
+        <div class="bracket bracket-tr"></div>
+        <div class="bracket bracket-bl"></div>
+        <div class="bracket bracket-br"></div>
+      </div>
+    </div>
+
+    <div class="viewport-toolbar">
+      <select id="cameraSelection" class="ctrl-select">
+        <option value="">Locating camera sensor...</option>
+      </select>
+      <button class="ctrl-btn" id="torchBtn">Torch</button>
+    </div>
+  </div>
+
+  
+  <div id="resultSheet" class="result-sheet">
+    <div class="status-pill" id="statusBadge">Status</div>
+    <h2 class="attendee-name" id="resultName">Attendee Name</h2>
+    <p class="attendee-sub" id="resultSub">Tier Information</p>
+
+    <div class="result-info-box" id="resultDetails"></div>
+
+    <button class="btn-resume" id="resumeBtn">Scan Next Attendee</button>
+  </div>
+
+  <div class="manual-entry-card">
+    <div class="manual-entry-title">Quick Simulation & Manual Verification</div>
+    <div class="input-row">
+      <select id="quickPassSelect">
+        <option value="">Select ticket from database...</option>
+      </select>
+      <button id="quickTestBtn">Test</button>
+    </div>
+    <div class="input-row" style="margin-bottom: 0;">
+      <input type="text" id="manualInput" placeholder="Or enter UUID token manually...">
+      <button id="manualSubmitBtn">Verify</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = (window.location.protocol === 'file:' || !window.location.port) ? 'http://localhost:3000' : '';
+  document.getElementById('adminLink').href = API_BASE ? `${API_BASE}/admin.html` : '/admin.html';
+
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playTone(freq, duration, type = 'sine', delay = 0) {
+    setTimeout(() => {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }, delay);
+  }
+
+  function chimeSuccess() {
+    playTone(880, 0.1, 'sine', 0);
+    playTone(1320, 0.18, 'sine', 90);
+    if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  }
+
+  function buzzerReject() {
+    playTone(180, 0.35, 'sawtooth', 0);
+    playTone(140, 0.35, 'sawtooth', 150);
+    if (navigator.vibrate) navigator.vibrate([200, 60, 200]);
+  }
+
+  let html5QrCode = null;
+  let isProcessing = false;
+  let torchActive = false;
+  let resumeTimer = null;
+
+  const resultSheet = document.getElementById('resultSheet');
+  const statusBadge = document.getElementById('statusBadge');
+  const resultName = document.getElementById('resultName');
+  const resultSub = document.getElementById('resultSub');
+  const resultDetails = document.getElementById('resultDetails');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const cameraSelect = document.getElementById('cameraSelection');
+  const torchBtn = document.getElementById('torchBtn');
+  const quickPassSelect = document.getElementById('quickPassSelect');
+
+  // Load Metrics & Dropdown List
+  async function loadGateMetrics() {
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets`);
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('statTotal').innerText = data.stats.total;
+        document.getElementById('statUsed').innerText = data.stats.used;
+        document.getElementById('statRemaining').innerText = data.stats.remaining;
+
+        quickPassSelect.innerHTML = '<option value="">Select ticket from database...</option>';
+        data.tickets.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.id;
+          opt.text = `${t.guest_name} (${t.ticket_category}) — ${t.is_used ? 'Used' : 'Unused'}`;
+          quickPassSelect.appendChild(opt);
+        });
+      }
+    } catch (e) {}
+  }
+
+  // Scan Verification Engine
+  async function validateTicket(token) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    if (html5QrCode?.isScanning) {
+      try { await html5QrCode.pause(true); } catch(e) {}
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/scan-ticket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: token, scanned_by: 'Main Gate Terminal 01' })
+      });
+
+      const data = await response.json();
+      renderScanSheet(data);
+      loadGateMetrics();
+    } catch (err) {
+      renderScanSheet({
+        status: 'error',
+        message: 'Network offline: could not verify pass.'
+      });
+    }
+  }
+
+  function renderScanSheet(data) {
+    resultSheet.className = 'result-sheet';
+    resultDetails.innerHTML = '';
+    clearTimeout(resumeTimer);
+
+    if (data.status === 'valid') {
+      // enter success if same qr
+      resultSheet.classList.add('success');
+      statusBadge.innerText = 'ADMISSION GRANTED';
+      resultName.innerText = data.guest.guest_name;
+      resultSub.innerText = `${data.guest.ticket_category} • First Check-in`;
+
+      resultDetails.innerHTML = `
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Phone</span>
+          <strong>${data.guest.phone_number}</strong>
+        </div>
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Verified At</span>
+          <strong style="color:var(--emerald);">${new Date(data.guest.scanned_at || Date.now()).toLocaleTimeString()}</strong>
+        </div>
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Security Protocol</span>
+          <span>Pass Marked Used (Anti-Passback)</span>
+        </div>
+      `;
+      chimeSuccess();
+
+    } else if (data.status === 'already_used') {
+      
+      resultSheet.classList.add('danger');
+      statusBadge.innerText = 'ENTRY REJECTED';
+      resultName.innerText = 'ALREADY CHECKED IN';
+      resultSub.innerText = 'Anti-Passback Violation Detected';
+
+      const scanTime = data.guest?.scanned_at ? new Date(data.guest.scanned_at).toLocaleTimeString() : 'Earlier';
+
+      resultDetails.innerHTML = `
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Attendee</span>
+          <strong style="color:#FDA4AF;">${data.guest?.guest_name || 'Registered Guest'}</strong>
+        </div>
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Initial Check-in</span>
+          <strong style="color:var(--rose);">${scanTime}</strong>
+        </div>
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Gate Attendant</span>
+          <span>${data.guest?.scanned_by || 'Terminal 01'}</span>
+        </div>
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Instruction</span>
+          <strong style="color:var(--rose);">Deny Turnstile Entry</strong>
+        </div>
+      `;
+      buzzerReject();
+
+    } else {
+      
+      resultSheet.classList.add('warning');
+      statusBadge.innerText = 'INVALID PASS';
+      resultName.innerText = 'CODE UNRECOGNIZED';
+      resultSub.innerText = 'Pass token not found in event database';
+      resultDetails.innerHTML = `
+        <div class="info-row">
+          <span style="color:var(--text-secondary);">Action</span>
+          <span>Redirect attendee to Registration Desk</span>
+        </div>
+      `;
+      buzzerReject();
+    }
+
+    resultSheet.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Auto resume after 3 seconds for continuous flow
+    resumeTimer = setTimeout(() => {
+      resumeScanning();
+    }, 3200);
+  }
+
+  function resumeScanning() {
+    clearTimeout(resumeTimer);
+    resultSheet.className = 'result-sheet';
+    isProcessing = false;
+    if (html5QrCode) {
+      try { html5QrCode.resume(); } catch (e) {}
+    }
+  }
+
+  resumeBtn.addEventListener('click', resumeScanning);
+
+  // Quick Simulation buttons
+  document.getElementById('quickTestBtn').onclick = () => {
+    const val = quickPassSelect.value;
+    if (val) validateTicket(val);
+  };
+
+  document.getElementById('manualSubmitBtn').onclick = () => {
+    const val = document.getElementById('manualInput').value.trim();
+    if (val) {
+      validateTicket(val);
+      document.getElementById('manualInput').value = '';
+    }
+  };
+
+  // Hardware Accelerated Camera Scanner
+  async function initCamera() {
+    try {
+      const cameras = await Html5Qrcode.getCameras();
+      cameraSelect.innerHTML = '';
+
+      if (!cameras || cameras.length === 0) {
+        cameraSelect.innerHTML = '<option>No optical sensor detected</option>';
+        return;
+      }
+
+      let backCamera = cameras.find(c => {
+        const l = c.label.toLowerCase();
+        return l.includes('back') || l.includes('rear') || l.includes('environment');
+      });
+      let selectedId = backCamera ? backCamera.id : cameras[0].id;
+
+      cameras.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.text = c.label || `Camera ${cameraSelect.children.length + 1}`;
+        if (c.id === selectedId) opt.selected = true;
+        cameraSelect.appendChild(opt);
+      });
+
+      html5QrCode = new Html5Qrcode("reader", {
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true // Native OS/GPU acceleration
+        }
+      });
+
+      const config = {
+        fps: 25,
+        videoConstraints: {
+          facingMode: { ideal: "environment" },
+          focusMode: "continuous",
+          width: { min: 640, ideal: 1280, max: 1920 }
+        },
+        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+      };
+
+      await html5QrCode.start(selectedId, config, (decodedText) => validateTicket(decodedText));
+
+      cameraSelect.addEventListener('change', async (e) => {
+        if (html5QrCode.isScanning) await html5QrCode.stop();
+        await html5QrCode.start(e.target.value, config, (decodedText) => validateTicket(decodedText));
+      });
+
+    } catch (e) {
+      cameraSelect.innerHTML = '<option>Camera permission required</option>';
+    }
+  }
+
+  // Torch
+  torchBtn.addEventListener('click', async () => {
+    if (!html5QrCode?.isScanning) return;
+    try {
+      torchActive = !torchActive;
+      await html5QrCode.applyVideoConstraints({ advanced: [{ torch: torchActive }] });
+      torchBtn.style.background = torchActive ? '#2563EB' : 'var(--surface-elevated)';
+    } catch (e) {
+      alert('Torch not supported on this optical sensor.');
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadGateMetrics();
+    initCamera();
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('test_token');
+    if (token) setTimeout(() => validateTicket(token), 400);
+  });
+</script>
+</body>
+</html>

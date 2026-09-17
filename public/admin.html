@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassKey Access Control | Event Gate Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0B0E14;
+      --bg-card: #121722;
+      --bg-card-hover: #171E2C;
+      --bg-input: #080B10;
+      --border-subtle: #1F2839;
+      --border-focus: #3B82F6;
+      --text-primary: #F3F4F6;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --accent: #2563EB;
+      --accent-hover: #1D4ED8;
+      --emerald-subtle: rgba(16, 185, 129, 0.12);
+      --emerald-border: rgba(16, 185, 129, 0.28);
+      --emerald-text: #34D399;
+      --rose-subtle: rgba(244, 63, 94, 0.12);
+      --rose-border: rgba(244, 63, 94, 0.28);
+      --rose-text: #FB7185;
+      --amber-subtle: rgba(245, 158, 11, 0.12);
+      --amber-border: rgba(245, 158, 11, 0.28);
+      --amber-text: #FBBF24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 20px 48px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 1180px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Top Navigation Bar */
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      background: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #60A5FA;
+    }
+
+    .brand-meta h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #FFFFFF;
+    }
+
+    .brand-meta p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+    }
+
+    .live-indicator.offline .live-dot {
+      background: #EF4444;
+      box-shadow: 0 0 8px #EF4444;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      border-color: var(--border-subtle);
+      color: var(--text-primary);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: #334155;
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #F87171;
+    }
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #EF4444;
+    }
+
+    /* Layout Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 960px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Surface Cards */
+    .surface-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .panel-header {
+      margin-bottom: 20px;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #FFFFFF;
+    }
+
+    .panel-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Form Fields */
+    .field-group {
+      margin-bottom: 16px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .text-input, .select-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .text-input:focus, .select-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Pass Card Preview (Bespoke Ticket UI) */
+    .ticket-card-wrapper {
+      display: none;
+      background: #0E131E;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .ticket-card-inner {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+      
+    .ticket-tier-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(37, 99, 235, 0.18);
+      color: #93C5FD;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      margin-bottom: 8px;
+    }
+
+    .ticket-attendee-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+    }
+
+    .ticket-attendee-phone {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .ticket-qr-plate {
+      background: #FFFFFF;
+      padding: 14px;
+      border-radius: 12px;
+      margin: 18px 0 14px;
+      display: inline-block;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .ticket-qr-plate img {
+      display: block;
+      width: 190px;
+      height: 190px;
+    }
+
+    .ticket-id-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+     
+    .ticket-divider {
+      width: 100%;
+      height: 1px;
+      background: dashed var(--border-subtle);
+      border-top: 1px dashed #2E384D;
+      margin: 16px 0 0;
+      position: relative;
+    }
+
+    .ticket-notch-left, .ticket-notch-right {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: var(--bg-card);
+      border-radius: 50%;
+      top: -9px;
+    }
+    .ticket-notch-left { left: -9px; }
+    .ticket-notch-right { right: -9px; }
+
+    .ticket-actions-bar {
+      padding: 16px 20px;
+      background: #090D15;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .ticket-actions-bar .btn {
+      flex: 1;
+    }
+
+    /* Inline Validation Testing Box */
+    .test-simulation-strip {
+      margin-top: 14px;
+      padding: 12px;
+      background: #090C12;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .test-result-inline {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .test-result-inline.success {
+      display: block;
+      background: var(--emerald-subtle);
+      border: 1px solid var(--emerald-border);
+      color: var(--emerald-text);
+    }
+    .test-result-inline.danger {
+      display: block;
+      background: var(--rose-subtle);
+      border: 1px solid var(--rose-border);
+      color: var(--rose-text);
+    }
+
+    /* Table & Roster Controls */
+    .roster-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-wrapper {
+      position: relative;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 8px 12px 8px 34px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--border-focus);
+    }
+
+    .filter-tabs {
+      display: flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .filter-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-tab.active {
+      background: #1E293B;
+      color: #FFFFFF;
+    }
+
+    /* Data Table */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: #090C12;
+      color: var(--text-secondary);
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #161C28;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-unused {
+      background: var(--emerald-subtle);
+      color: var(--emerald-text);
+      border: 1px solid var(--emerald-border);
+    }
+
+    .badge-used {
+      background: var(--rose-subtle);
+      color: var(--rose-text);
+      border: 1px solid var(--rose-border);
+    }
+
+    .status-dot-sm {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-action-icon {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-action-icon:hover {
+      background: #1A2232;
+      color: #FFFFFF;
+      border-color: #334155;
+    }
+    .btn-action-icon.danger:hover {
+      background: rgba(239, 68, 68, 0.12);
+      color: #F87171;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    /* Toast Notification System */
+    #toastContainer {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      min-width: 280px;
+      max-width: 360px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: #161D2B;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideToast 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideToast {
+      from { transform: translateX(40px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast.success { border-color: var(--emerald-border); color: var(--emerald-text); }
+    .toast.error { border-color: var(--rose-border); color: var(--rose-text); }
+    .toast.info { border-color: #3B82F6; color: #93C5FD; }
+
+    /* Custom Confirmation Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 9998;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      max-width: 420px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.7);
+    }
+    .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .modal-body { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Header -->
+  <header class="top-nav">
+    <div class="brand-cluster">
+      <div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/>
+        </svg>
+      </div>
+      <div class="brand-meta">
+        <h1>PassKey Gate Access</h1>
+        <p>Real-Time Single-Use Admission Control</p>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <div class="live-indicator" id="serverPill">
+        <span class="live-dot"></span>
+        <span id="serverStatusText">Terminal Connected</span>
+      </div>
+      <a href="/scanner.html" id="scannerLink" class="btn btn-primary" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        Launch Camera Scanner
+      </a>
+    </div>
+  </header>
+
+  <!-- Main 2-Column Interface -->
+  <div class="dashboard-grid">
+    <!-- Form Panel -->
+    <section class="surface-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Issue Attendee Pass</h2>
+        <p class="panel-desc">Generate a cryptographically unique UUID v4 ticket and instant QR payload</p>
+      </div>
+
+      <form id="generateForm">
+        <div class="field-group">
+          <label class="field-label">Full Name *</label>
+          <input type="text" id="guestName" class="text-input" placeholder="e.g. Sarah Connor" required autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Phone Number *</label>
+          <input type="text" id="phoneNumber" class="text-input" placeholder="e.g. +1 555-0149" required autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Email Address (Optional)</label>
+          <input type="email" id="guestEmail" class="text-input" placeholder="sarah@example.com" autocomplete="off">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Access Category</label>
+          <select id="ticketCategory" class="select-input">
+            <option value="VIP Admission">VIP Admission</option>
+            <option value="General Admission" selected>General Admission</option>
+            <option value="Speaker / Guest">Speaker / Guest</option>
+            <option value="Crew / Staff">Crew / Staff</option>
+            <option value="Press / Media">Press / Media</option>
+          </select>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Generate Verified Pass
+        </button>
+      </form>
+    </section>
+
+    <!-- Pass Preview & Direct Actions -->
+    <section class="surface-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Pass Output & Distribution</h2>
+        <p class="panel-desc">Download pass image, dispatch credentials, or verify check-in mechanics</p>
+      </div>
+
+      <div id="emptyState" style="text-align: center; padding: 56px 20px; color: var(--text-muted);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.5;">
+          <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 9h6v6H9z"/>
+        </svg>
+        <p style="font-size: 13px;">Generate a pass on the left to preview the digital ticket.</p>
+      </div>
+
+      <!-- Ticket Mockup -->
+      <div class="ticket-card-wrapper" id="ticketPreview">
+        <div class="ticket-card-inner">
+          <span class="ticket-tier-badge" id="prevCategory">General</span>
+          <h3 class="ticket-attendee-name" id="prevGuestName">Guest Name</h3>
+          <p class="ticket-attendee-phone" id="prevPhone">+1 000-0000</p>
+
+          <div class="ticket-qr-plate">
+            <img id="prevQrImage" src="" alt="Attendee QR Pass">
+          </div>
+
+          <div class="ticket-id-tag" id="prevUuid">00000000-0000-0000-0000-000000000000</div>
+
+          <!-- Perforation cutouts -->
+          <div class="ticket-divider">
+            <div class="ticket-notch-left"></div>
+            <div class="ticket-notch-right"></div>
+          </div>
+
+          <!-- Quick Test Verification Box -->
+          <div class="test-simulation-strip">
+            <button id="quickTestScanBtn" class="btn btn-secondary" style="width: 100%; font-size: 12px; padding: 7px 10px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Simulate Gate Scan
+            </button>
+            <div id="scanFeedback" class="test-result-inline"></div>
+          </div>
+        </div>
+
+        <div class="ticket-actions-bar">
+          <a id="downloadQrBtn" download="pass.png" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            PNG
+          </a>
+          <a id="whatsappBtn" target="_blank" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+            WhatsApp
+          </a>
+          <button id="deletePreviewBtn" class="btn btn-danger-outline">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <!-- Bottom Attendee Roster Table -->
+  <section class="surface-panel">
+    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 class="panel-title">Attendee Roster & Access Logs</h2>
+        <p class="panel-desc">Real-time status tracking and anti-passback verification records</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="loadGuestList()" class="btn btn-secondary" style="padding: 7px 12px; font-size: 12px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+          Sync
+        </button>
+        <button onclick="promptClearAll()" class="btn btn-danger-outline" style="padding: 7px 12px; font-size: 12px;">
+          Clear All
+        </button>
+      </div>
+    </div>
+
+    <!-- Toolbar: Search & Tab Filters -->
+    <div class="roster-toolbar">
+      <div class="search-wrapper">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="rosterSearch" class="search-input" placeholder="Search by name, phone or ID...">
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">All (<span id="countAll">0</span>)</button>
+        <button class="filter-tab" data-filter="unused" onclick="setFilter('unused')">Unused (<span id="countUnused">0</span>)</button>
+        <button class="filter-tab" data-filter="used" onclick="setFilter('used')">Checked In (<span id="countUsed">0</span>)</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Attendee</th>
+            <th>Phone</th>
+            <th>Access Tier</th>
+            <th>Stored QR Code</th>
+            <th>Gate Status</th>
+            <th>Check-in Timestamp</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="guestTableBody">
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">Loading records from database...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- View Stored QR Code Modal -->
+<div class="modal-backdrop" id="viewQrModal">
+  <div class="modal-box" style="text-align: center; max-width: 360px;">
+    <h3 class="modal-title" id="qrModalName">Attendee Pass</h3>
+    <p class="modal-body" id="qrModalSub" style="margin-bottom: 12px;">Pass loaded from database</p>
+    
+    <div style="background: #FFFFFF; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 14px;">
+      <img id="qrModalImage" src="" alt="Stored QR" style="width: 200px; height: 200px; display: block;">
+    </div>
+    
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); margin-bottom: 18px;" id="qrModalToken"></div>
+    
+    <div class="modal-actions" style="justify-content: center; gap: 8px;">
+      <a id="qrModalDownload" download="pass.png" class="btn btn-secondary">Download</a>
+      <button class="btn btn-primary" onclick="closeQrModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<!-- Confirmation Modal -->
+<div class="modal-backdrop" id="confirmModal">
+  <div class="modal-box">
+    <h3 class="modal-title" id="modalTitle">Confirm Action</h3>
+    <p class="modal-body" id="modalBody">Are you sure you want to proceed?</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger-outline" id="modalConfirmBtn" style="background: rgba(239, 68, 68, 0.15);">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = (window.location.protocol === 'file:' || !window.location.port) ? 'http://localhost:3000' : '';
+  document.getElementById('scannerLink').href = API_BASE ? `${API_BASE}/scanner.html` : '/scanner.html';
+
+  let currentTicket = null;
+  let allTickets = [];
+  let currentFilter = 'all';
+
+  // Professional Audio Chimes (Web Audio API)
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playBeep(freq, duration, type = 'sine', delay = 0) {
+    setTimeout(() => {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }, delay);
+  }
+
+  // Toast Notifications
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.2s, transform 0.2s';
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(8px)';
+      setTimeout(() => toast.remove(), 200);
+    }, 3200);
+  }
+
+  // Confirmation Modal
+  let pendingModalAction = null;
+  function openModal(title, body, confirmText, actionFn) {
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalBody').innerText = body;
+    const btn = document.getElementById('modalConfirmBtn');
+    btn.innerText = confirmText;
+    pendingModalAction = actionFn;
+    document.getElementById('confirmModal').classList.add('active');
+  }
+  function closeModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+    pendingModalAction = null;
+  }
+  document.getElementById('modalConfirmBtn').onclick = () => {
+    if (pendingModalAction) pendingModalAction();
+    closeModal();
+  };
+
+  // Check Backend Connection
+  async function checkServerHealth() {
+    const pill = document.getElementById('serverPill');
+    const txt = document.getElementById('serverStatusText');
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets`);
+      if (res.ok) {
+        pill.className = 'live-indicator';
+        txt.innerText = 'Terminal Connected';
+      } else throw new Error();
+    } catch (e) {
+      pill.className = 'live-indicator offline';
+      txt.innerText = 'Terminal Offline';
+    }
+  }
+
+  // Form Submit: Issue Ticket
+  document.getElementById('generateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = 'Issuing pass...';
+
+    const payload = {
+      guest_name: document.getElementById('guestName').value.trim(),
+      phone_number: document.getElementById('phoneNumber').value.trim(),
+      email: document.getElementById('guestEmail').value.trim(),
+      ticket_category: document.getElementById('ticketCategory').value
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/generate-ticket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentTicket = data.ticket;
+        renderTicketPreview(data.ticket, data.qr_code);
+        loadGuestList();
+        showToast(`Pass issued for ${data.ticket.guest_name}`, 'success');
+
+        document.getElementById('guestName').value = '';
+        document.getElementById('phoneNumber').value = '';
+        document.getElementById('guestEmail').value = '';
+      } else {
+        showToast(data.error || 'Failed to issue ticket', 'error');
+      }
+    } catch (err) {
+      showToast('Network error connecting to access server', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Generate Verified Pass`;
+    }
+  });
+
+  function renderTicketPreview(ticket, qrDataUrl) {
+    document.getElementById('emptyState').style.display = 'none';
+    const preview = document.getElementById('ticketPreview');
+    preview.style.display = 'block';
+
+    document.getElementById('prevGuestName').innerText = ticket.guest_name;
+    document.getElementById('prevCategory').innerText = ticket.ticket_category;
+    document.getElementById('prevPhone').innerText = ticket.phone_number;
+    document.getElementById('prevUuid').innerText = ticket.id;
+    document.getElementById('prevQrImage').src = qrDataUrl;
+
+    const dlBtn = document.getElementById('downloadQrBtn');
+    dlBtn.href = qrDataUrl;
+    dlBtn.download = `Pass_${ticket.guest_name.replace(/\\s+/g, '_')}.png`;
+
+    const cleanPhone = ticket.phone_number.replace(/[^0-9]/g, '');
+    const message = encodeURIComponent(
+      `Hello ${ticket.guest_name}, here is your entry pass for ${ticket.ticket_category}.\nPass Token: ${ticket.id}\nPlease present this code at gate check-in.`
+    );
+    document.getElementById('whatsappBtn').href = `https://wa.me/${cleanPhone}?text=${message}`;
+     //get id bytype id  
+    document.getElementById('deletePreviewBtn').onclick = () => {
+      openModal(
+        'Delete Attendee Pass',
+        `Are you sure you want to permanently delete the pass for ${ticket.guest_name}?`,
+        'Delete Pass',
+        () => deleteTicket(ticket.id)
+      );
+    };
+
+    document.getElementById('quickTestScanBtn').onclick = () => performSimulationScan(ticket.id);
+    const feedback = document.getElementById('scanFeedback');
+    feedback.className = 'test-result-inline';
+    feedback.innerText = '';
+  }
+
+  // Gate Scan Simulation
+  async function performSimulationScan(ticketId) {
+    const feedback = document.getElementById('scanFeedback');
+    try {
+      const res = await fetch(`${API_BASE}/api/scan-ticket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket_id: ticketId, scanned_by: 'Admin Gate Terminal' })
+      });
+      const data = await res.json();
+      feedback.className = 'test-result-inline';
+
+      if (data.status === 'valid') {
+        feedback.classList.add('success');
+        feedback.innerHTML = `<strong>ACCESS GRANTED</strong> — Welcome ${data.guest.guest_name}`;
+        playBeep(880, 0.1, 'sine', 0);
+        playBeep(1320, 0.2, 'sine', 100);
+      } else if (data.status === 'already_used') {
+        feedback.classList.add('danger');
+        feedback.innerHTML = `<strong>ENTRY REJECTED</strong> — Already checked in at ${new Date(data.guest.scanned_at).toLocaleTimeString()}`;
+        playBeep(180, 0.3, 'sawtooth');
+      } else {
+        feedback.classList.add('danger');
+        feedback.innerHTML = `<strong>INVALID PASS</strong> — Code not in system`;
+        playBeep(220, 0.2);
+      }
+      loadGuestList();
+    } catch (err) {
+      showToast('Scan validation failed: ' + err.message, 'error');
+    }
+  }
+
+  // Load and Filter Roster
+  async function loadGuestList() {
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets`);
+      const data = await res.json();
+      allTickets = data.tickets || [];
+
+      document.getElementById('countAll').innerText = allTickets.length;
+      document.getElementById('countUsed').innerText = allTickets.filter(t => t.is_used).length;
+      document.getElementById('countUnused').innerText = allTickets.filter(t => !t.is_used).length;
+
+      filterAndRenderTable();
+    } catch (err) {
+      console.error('Failed to load roster:', err);
+    }
+  }
+
+  function setFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.filter === filter);
+    });
+    filterAndRenderTable();
+  }
+
+  document.getElementById('rosterSearch').addEventListener('input', filterAndRenderTable);
+
+  function filterAndRenderTable() {
+    const q = document.getElementById('rosterSearch').value.toLowerCase().trim();
+    const tbody = document.getElementById('guestTableBody');
+    tbody.innerHTML = '';
+
+    let filtered = allTickets.filter(t => {
+      if (currentFilter === 'unused' && t.is_used) return false;
+      if (currentFilter === 'used' && !t.is_used) return false;
+      if (q) {
+        return t.guest_name.toLowerCase().includes(q) ||
+               t.phone_number.toLowerCase().includes(q) ||
+               t.id.toLowerCase().includes(q);
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:32px;">No matching records found.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach(t => {
+      const tr = document.createElement('tr');
+      const badge = t.is_used
+        ? `<span class="badge-pill badge-used"><span class="status-dot-sm"></span>Checked In</span>`
+        : `<span class="badge-pill badge-unused"><span class="status-dot-sm"></span>Valid Pass</span>`;
+
+      const timeStr = t.scanned_at ? new Date(t.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+
+      const qrBtnHtml = t.qr_code 
+        ? `<button class="btn-action-icon" onclick="viewStoredQr('${t.id}')" title="View Stored QR in Database">
+             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/></svg>
+             View QR
+           </button>`
+        : `<span style="font-size:11px; color:var(--text-muted);">No QR</span>`;
+
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:700; color:#FFF;">${escapeHtml(t.guest_name)}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-family:monospace;">${t.id.substring(0, 13)}...</div>
+        </td>
+        <td>${escapeHtml(t.phone_number)}</td>
+        <td><span style="font-size:12px; color:#93C5FD; font-weight:600;">${escapeHtml(t.ticket_category)}</span></td>
+        <td>${qrBtnHtml}</td>
+        <td>${badge}</td>
+        <td style="color:var(--text-secondary); font-size:12px;">${timeStr}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn-action-icon" onclick="performSimulationScan('${t.id}')">Scan</button>
+            <button class="btn-action-icon" onclick="resetTicket('${t.id}')">Reset</button>
+            <button class="btn-action-icon danger" onclick="confirmDeleteTicket('${t.id}', '${escapeHtml(t.guest_name)}')">Delete</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function viewStoredQr(ticketId) {
+    const ticket = allTickets.find(t => t.id === ticketId);
+    if (!ticket || !ticket.qr_code) {
+      showToast('QR code not found for this ticket', 'error');
+      return;
+    }
+
+    document.getElementById('qrModalName').innerText = ticket.guest_name;
+    document.getElementById('qrModalSub').innerText = `${ticket.ticket_category} • Pass loaded from database`;
+    document.getElementById('qrModalImage').src = ticket.qr_code;
+    document.getElementById('qrModalToken').innerText = ticket.id;
+
+    const dlBtn = document.getElementById('qrModalDownload');
+    dlBtn.href = ticket.qr_code;
+    dlBtn.download = `Pass_${ticket.guest_name.replace(/\\s+/g, '_')}.png`;
+
+    document.getElementById('viewQrModal').classList.add('active');
+  }
+
+  function closeQrModal() {
+    document.getElementById('viewQrModal').classList.remove('active');
+  }
+
+  function confirmDeleteTicket(id, name) {
+    openModal(
+      'Delete Attendee Pass',
+      `Are you sure you want to permanently delete the pass for ${name}?`,
+      'Delete',
+      () => deleteTicket(id)
+    );
+  }
+
+  async function deleteTicket(ticketId) {
+    try {
+      const res = await fetch(`${API_BASE}/api/tickets/${ticketId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        if (currentTicket && currentTicket.id === ticketId) {
+          currentTicket = null;
+          document.getElementById('ticketPreview').style.display = 'none';
+          document.getElementById('emptyState').style.display = 'block';
+        }
+        loadGuestList();
+        showToast('Pass deleted successfully', 'info');
+      }
+    } catch (err) {
+      showToast('Error deleting pass', 'error');
+    }
+  }
+
+  function promptClearAll() {
+    openModal(
+      'Clear All Passes',
+      'This will permanently delete all attendees and QR passes from the database. This action cannot be reversed.',
+      'Wipe Database',
+      async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/tickets`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) {
+            currentTicket = null;
+            document.getElementById('ticketPreview').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            loadGuestList();
+            showToast('All passes removed from database', 'info');
+          }
+        } catch (e) {
+          showToast('Failed to clear database', 'error');
+        }
+      }
+    );
+  }
+
+  async function resetTicket(ticketId) {
+    try {
+      const res = await fetch(`${API_BASE}/api/reset-ticket/${ticketId}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        loadGuestList();
+        showToast('Pass status reset to unused', 'info');
+      }
+    } catch (e) {
+      showToast('Reset failed', 'error');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag] || tag));
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    checkServerHealth();
+    loadGuestList();
+  });
+</script>
+</body>
+</html>
+
+
+
