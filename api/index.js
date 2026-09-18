@@ -10,8 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL || 'file:event_tickets.db',
-  authToken: process.env.TURSO_AUTH_TOKEN
+const dbUrl = process.env.TURSO_DATABASE_URL || (process.env.VERCEL ? 'file:/tmp/event_tickets.db' : 'file:event_tickets.db');
 });
 
 let dbInitialized = false;
