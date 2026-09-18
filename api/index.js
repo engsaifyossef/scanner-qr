@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const { createClient } = require('@libsql/client');
@@ -9,8 +10,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = createClient({
+// On Vercel serverless, if no cloud DB URL is set, write to the writable /tmp directory
 const dbUrl = process.env.TURSO_DATABASE_URL || (process.env.VERCEL ? 'file:/tmp/event_tickets.db' : 'file:event_tickets.db');
+
+const db = createClient({
+  url: dbUrl,
+  authToken: process.env.TURSO_AUTH_TOKEN
 });
 
 let dbInitialized = false;
